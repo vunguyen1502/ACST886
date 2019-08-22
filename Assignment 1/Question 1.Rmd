@@ -1,0 +1,42 @@
+---
+title: "Question 1 Assignment 1 ACST886"
+author: "Vu Nguyen"
+date: "22/08/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+
+I apply the annuity 
+$R\times\sum_{n = 1}^{30} v^n=600,000$  
+In which:  
+$R$ is the annual payment  
+$v$ is the discount factor with $v=(1+i)^{-1}$
+  
+```{r}
+pmt=function(R) {
+  i=0.035
+  v=1/(1+i)
+  n=c(1:30)
+  a=sum(v^n)
+  R*a-600000
+}
+```
+The code create a function simulating the equation: 
+$R\times\sum_{n = 1}^{30} v^n-600,000=0$  
+
+Now we use uniroot command to find the solution for the equation.
+```{r}
+Q1=uniroot(pmt,interval = c(1,9999999))$root
+Q1
+```
+The part $root extract the solution from the result table.
+Testing the result:
+```{r}
+pmt(Q1)
+```
+This is the correct result.

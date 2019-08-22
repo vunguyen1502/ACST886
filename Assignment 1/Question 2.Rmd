@@ -1,0 +1,81 @@
+---
+title: "Question 2 Assignment 1 ACST886"
+author: "Vu Nguyen"
+date: "22/08/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 2
+## Part a)
+Since Scott take on the same loan as Bill in Question 1 with the same term and interest rate, by not including the interest offset amount the initial payment of Scott and Bill should be the same.
+```{r}
+Q1=32622.8
+Q1
+```
+## Part b)
+Since Scott have an offset account which pay annual interest at 3.5%, this means the annual repayment of Scott would be $R+100,000\times3.5\%=R+3,500$. With a greater annual repayment and a 100,000 payoff, the payment term should be less than 30 years. Prove:
+```{r}
+nper=function(n) {
+  i=0.035
+  v=1/(1+i)
+    a=(1-v^n)/i
+  (Q1+3500)*a-600000+100000*v^n
+}
+```
+Since we expecting a non-integer anwser, I switch to an annuity formulae.
+The code create a function simulating the equation: 
+$(R+3,500)\times\frac{1-v^n}{i}+100,000v^n-600,000=0$  
+Note that:  
+$=\frac{1-v^n}{i}=\sum_{j = 1}^{n}v^j$  
+$100,000\times v^n$ is the discounted value of the last payoff $100,000. 
+
+```{r}
+Q2a=uniroot(nper,interval = c(1,9999999))$root
+Q2a
+ceiling(Q2a)
+```
+The ceiling command round up the answer since the term can only be an interger. As we can see it only takes 23 years for Scott to payoff the loan  
+
+Testing the result:  
+```{r}
+nper(Q2a)
+```
+The result is correct(Testing show value close to 0 due to non-integer term)
+
+Since the calculated payment term is a non-integer, the last payment of Scott should be less than the initial payment. Prove:
+
+```{r}
+lpmt=function(z) {
+  i=0.035
+  v=1/(1+i)
+    a=(1-v^23)/i
+  (600000-(Q1+3500)*a)*(1+i)^23-z
+}
+```
+
+I use the restrospective method to calculate the loan outstanding right before the last payment.
+The code create a function simulating the equation:  
+$[[600,000-(R+3,500)]\times\frac{1-v^{25}}{i}]\times(1+i)^{26}-z=0$  
+In which:  
+$z$ is the loan outstanding right before the offset account payoff.
+
+```{r}
+z=uniroot(lpmt,interval = c(1,9999999))$root
+z
+```
+
+Scott last repayment will be:
+
+```{r}
+Q2b=z+Q1-100000
+Q2b
+```
+
+The result shows that the last payment is less than the initial payment calculated in part a.
+In conclusion, with the offset account in effect, the payment term of Scott would be 23 years with the last repayment is $11,484.89
