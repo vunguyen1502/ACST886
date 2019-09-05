@@ -1,0 +1,177 @@
+---
+title: "Question 2 Assignment 2_ACST886"
+author: "Vu Nguyen"
+date: "05/09/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is the link to my Assignment on Github:  
+https://github.com/vunguyen1502/ACST886/tree/master/Assignment%202  
+https://github.com/vunguyen1502/ACST886  
+Either link would do.  
+# Question 2
+
+First, we input the data.  
+```{r}
+Q2=data.frame("Age-group"=c("40-44","45-49","50-54","55-59","60-64","65-69","70-74","75-79","80-84","85-89","90-94"),
+                "Exposed to Risk"=c(15518,19428,21594,21890,19174,15775,11414,6993,3276,1096,201),
+                "Actual deaths"=c(65,144,219,378,465,557,685,644,471,217,67),
+                "Expected deaths"=c(73.9,134.6,223.9,346.3,468.1,600.2,675.5,637.4,458.7,240.6,61.4))
+Q2
+```
+Make sure to set up some vector for easy coding
+```{r}
+Ex=Q2$Exposed.to.Risk
+dx=Q2$Actual.deaths
+E=Q2$Expected.deaths
+qx=E/Ex
+```
+Now we can do some testing:  
+$~$  
+$~$  
+$~$  
+
+## Chi-Square Test
+The chi-square test statistic is:  
+$\sum_{x}^{} z_{x}$  
+```{r}
+z=(dx-qx*Ex)/sqrt(Ex*qx*(1-qx))
+sum(z^2)
+```
+Now compare it with 95th percentile of chi square distribution with several different parameter
+```{r}
+qchisq(0.95,11)
+qchisq(0.95,10)
+qchisq(0.95,9)
+qchisq(0.95,8)
+qchisq(0.95,7)
+
+```
+As you can see, the statistic is smaller than the 95 percentile of chi square with considerable reduce in degree of freedom.  
+Therefore, we retain the null hypothesis.  
+However, chi-square test have several problem in the consistency of deviation size and nature. Hence, further test is required. 
+
+## Standardised Deviations Test  
+
+The standardised deviations test statistic:  
+$\sum_{All\;interval}^{}\frac{(A-E)^2}{E}$  
+First we will count the actual number falling into differnce interval
+```{r}
+A=c(length(z[z<(-3)]),
+    length(z[z<(-2)&z>(-3)]),
+    length(z[z<(-1)&z>(-2)]),
+    length(z[z<0&z>(-1)]),
+    length(z[z<1&z>0]),
+    length(z[z<2&z>1]),
+    length(z[z<3&z>2]),
+    length(z[z>3]))
+A
+```
+Now we will create the expected count
+```{r}
+E=11*c(0,0.02,0.14,0.34,0.34,0.14,0.02,0)
+E
+```
+We obmit the first and last interval since there are no values in them.  
+Now we calculate the statistic.
+```{r}
+E=E[c(2:7)]
+A=A[c(2:7)]
+sum(((E-A)^2)/E)
+```
+
+Now compare with the 95th quantile chi square with the degree of freedom 5 since we only use 6 interval for the statistic
+```{r}
+qchisq(0.95,5)
+```
+The statistic is smaller than the 95th quantile.
+```{r}
+length(z[z<(2/3)&z>(-2/3)])
+length(z[z<0])
+```
+Testing addtional properties show that approximately half of the deviations should fall in the interval (-2/3,2/3) and the number of positive deviations  is roughly equal numbers of negative deviations.  
+Both the results show evidence supporting the null hypothesis.
+
+## Cumulative Deviations Test
+$\frac{\sum_{x}^{}(d_x-E_xq_x)}{\sqrt{\sum_{x}^{}E_xq_x(1-q_x)}}$  
+```{r}
+sum(dx-Ex*qx)/sqrt(sum(Ex*qx*(1-qx)))
+```
+We can see that the statistic is smaller than 1.64 (95th quantile of standard normal). Hence, we retain the null hypothesis.
+
+## Signs Test  
+The statistic the the number of positive $z_x$ 
+```{r}
+length(z[z>0])
+```
+Now we will find the smallest value $k$ for this equation:  
+$\sum_{j=0}^{k}\binom{m}{j}0.5^m\ge0.025$  
+In which: $m=11$
+```{r}
+binomk=function(k){
+  m=11
+  a=c(0:k)
+  fac=choose(m,a)
+  (sum(fac*(0.5^m))-0.025)
+}
+v=numeric()
+for (i in c(0:11)) {
+  v[i+1]=(binomk(i))
+  }
+v
+```
+As we can see, our $k$ value is 2. We have $m-k=9$ which is greater than the statistic (6). Therefore, we retain the null hypothesis.
+
+## Grouping of Signs Test
+The statistic is simply the number of distinct groups of positive $z_x$
+```{r}
+z>0
+
+```
+We can see that the statistic is 4.  
+Now we find the smallest $k$ value for the following equation:  
+$\sum_{j=0}^{k}\binom{n_1-1}{j-1}\binom{n_2+1}{j}/\binom{n_1+n_2}{n_1}\ge0.05$  
+```{r}
+groupsign=function(k){
+  j=c(1:k)
+  n1=length(z[z>0])
+  n2=length(z[z<0])
+sum((choose(n1-1,j-1)*choose(n2+1,j))/choose(n1+n2,n1))-0.05
+}
+g=numeric()
+for (i in c(1:11)) {
+  g[i+1]=(groupsign(i))
+}
+g
+```
+From the result, we can see that $k=2$ which is smaller than the statistic (4). Hence, we retain the null hypothesis.
+
+## Serial Correlations Test
+The serial correlations test statistic is:  
+$\frac{\sum_{i=1}^{m-1} (z_i-\bar{z}^{(1)})(z_{i+1}-\bar{z}^{(2)})}{\sqrt{\sum_{i=1}^{m-1} (z_i-\bar{z}^{(1)})^2\sum_{i=1}^{m-1} (z_{i+1}-\bar{z}^{(2)})^2}}\sqrt{m-1}$  
+In which:  
+$\bar{z}^{(1)}=\sum_{i=1}^{m-1}z_i/(m-1)$  
+$\bar{z}^{(2)}=\sum_{i=1}^{m-1}z_{i+1}/(m-1)$  
+```{r}
+m=11
+zi=z[c(1:10)]
+zi1=z[c(2:11)]
+
+zb1=sum(zi/(m-1))
+zb2=sum(zi1/(m-1))
+
+sqrt(m-1)*sum((zi-zb1)*(zi1-zb2))/sqrt(sum((zi-zb1)^2)*sum((zi1-zb2)^2))
+
+```
+We can see that the statistic is smaller than 1.64 (95th quantile of standard normal). Therefore, we retain the null hypothesis.
+$~$
+
+## Conclusion  
+
+In conclusion, all test show evidence support the null hypothes which means graduated estimates are sufficiently close to the crude estimates from which they are derived, and the adherence to data is sufficient.

@@ -1,0 +1,154 @@
+---
+title: "Question 1 Assignment 2_ACST886"
+author: "Vu Nguyen"
+date: "05/09/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is the link to my Assignment on Github:  
+https://github.com/vunguyen1502/ACST886/tree/master/Assignment%202  
+https://github.com/vunguyen1502/ACST886  
+Either link would do.  
+
+# Question 1
+First we input the data.  
+```{r}
+LifeA <- as.Date(c("1964-03-17", "1992-06-20", "1998-06-20"))
+LifeB <- as.Date(c("1964-05-06", "1992-08-06", "1993-06-12"))
+LifeC <- as.Date(c("1964-08-12", "1992-12-18", "1995-06-18"))
+LifeD <- as.Date(c("1964-10-27", "1993-01-04", "1998-06-20"))
+LifeE <- as.Date(c("1965-01-04", "1993-04-28", "1996-08-29"))
+LifeF <- as.Date(c("1965-04-18", "1993-06-16", "1995-12-12"))
+LifeG <- as.Date(c("1965-05-20", "1993-10-29", "1996-04-21"))
+LifeH <- as.Date(c("1965-07-04", "1994-02-16", "1998-06-20"))
+LifeI <- as.Date(c("1965-09-16", "1994-08-22", "1997-02-22"))
+LifeJ <- as.Date(c("1965-12-11", "1995-03-06", "1997-02-17"))
+```
+I add the exit day for those who live on without withdraw which is the anniversaries in 1998.
+We will need to calculate the initial exposure for each life.  
+
+## Calculate eposure for those who live without withdrawing
+I create a function to calculate the exposure for those who live on without withdrawing.
+```{r}
+live=function(Life){
+  insure=as.Date(paste0(substr(Life[1],1,4),substr(Life[2],5,10)))
+  if (abs(as.numeric(Life[1]-insure))<183){
+  insbirth=as.numeric(substr(Life[1],1,4))
+  } else if (as.numeric(Life[1]-insure)>182){
+  insbirth=as.numeric(substr(Life[1],1,4))+1
+  } else if (as.numeric(Life[1]-insure)<-182){
+  insbirth=as.numeric(substr(Life[1],1,4))-1
+  }
+  agexentry=as.Date(paste0(insbirth+30,substr(Life[2],5,10)))
+  min(as.numeric(Life[3]-agexentry)/365.25,1)
+}
+
+```
+- I create a date which is the policy anniversary at birth year. (insure)
+- The next 6 line is the condition to find the birth year where Life's isuring age is exactly 0. Basically, the condition find the anniversary date nearest to the birthday. 
+- agexentry is the policy anniversary where age is exactly 30.  
+- The last line is to take the date of exit (anniversay at 1998) minus the age 30 date of entry (agexentry). If it is greater than 1, then they have full exposure at age 30.  
+$~$
+Now we calculate the exposure for those who live without withdrawing.  
+```{r}
+AgeLive=(live(LifeA)+live(LifeD)+live(LifeH))
+AgeLive
+```
+
+## Calculate eposure for those who withdrawed
+Now, I create a function to calculate the exposure for those who withdrawed.
+```{r}
+withdrawal=function(Life){
+  insure=as.Date(paste0(substr(Life[1],1,4),substr(Life[2],5,10)))
+  if (abs(as.numeric(Life[1]-insure))<183){
+    insbirth=as.numeric(substr(Life[1],1,4))
+  } else if (as.numeric(Life[1]-insure)>182){
+    insbirth=as.numeric(substr(Life[1],1,4))+1
+  } else if (as.numeric(Life[1]-insure)<-182){
+    insbirth=as.numeric(substr(Life[1],1,4))-1
+  }
+  policyyear=as.numeric(substr(Life[2],1,4))
+  issuringage=policyyear-insbirth
+  withdrawage=as.numeric(substr(Life[3],1,4))-policyyear+issuringage
+  agexentry=as.Date(paste0(insbirth+30,substr(Life[2],5,10)))
+  agexexit=as.Date(paste0(insbirth+withdrawage,substr(Life[2],5,10)))
+  min(max(as.numeric(agexexit-agexentry)/365.25,0),1)
+}
+```
+- I create a date which is the policy anniversary at birth year. (insure)
+- The next 6 line is the condition to find the birth year where Life's isuring age is exactly 0. Basically, the condition find the anniversary date nearest to the birthday.
+- The next 2 lines are to caculate the sd age (issuringage)
+- The I calculate the age a withdrawal (withdrawage)
+- agexentry is the policy anniversary where age is exactly 30.
+- agexexit is the policy anniversary where Life withdraw from the policy.
+- The last line is to take the date of exit (anniversay at withdrawal) minus the age 30 date of entry (agexentry). If it is greater than 1, then they have full exposure at age 30. Otherwise, divide it for 365.25 to get eposure time.
+$~$  
+$~$  
+$~$  
+$~$
+Now we calculate the exposure for those who withdrawed.
+```{r}
+AgeWithdraw=(withdrawal(LifeC)+withdrawal(LifeF)+withdrawal(LifeI))
+AgeWithdraw
+```
+## Calculate eposure for those who died
+I create a function to calculate the exposure for those who died.  
+```{r}
+death=function(Life){
+  insure=as.Date(paste0(substr(Life[1],1,4),substr(Life[2],5,10)))
+  if (abs(as.numeric(Life[1]-insure))<183){
+    insbirth=as.numeric(substr(Life[1],1,4))
+  } else if (as.numeric(Life[1]-insure)>182){
+    insbirth=as.numeric(substr(Life[1],1,4))+1
+  } else if (as.numeric(Life[1]-insure)<(-182)){
+    insbirth=as.numeric(substr(Life[1],1,4))-1
+  }
+  agexentry=as.Date(paste0(insbirth+30,substr(Life[2],5,10)))
+  insuredeath=as.Date(paste0(substr(Life[3],1,4),substr(Life[2],5,10)))
+  if (abs(as.numeric(Life[3]-insuredeath))>0){
+    insdeath=as.numeric(substr(Life[3],1,4))+1
+  } else {
+    insdeath=as.numeric(substr(Life[3],1,4))
+  }
+  agexentry=as.Date(paste0(insbirth+30,substr(Life[2],5,10)))
+  agexexit=as.Date(paste0(insuredeath,substr(Life[2],5,10)))
+  min(max(as.numeric(agexexit-agexentry)/365.25,0),1)
+}
+```
+- I create a date which is the policy anniversary at birth year. (insure).  
+- The next 6 line is the condition to find the birth year where Life's isuring age is exactly 0. Basically, the condition find the anniversary date nearest to the birthday.  
+- I create a date which is the policy anniversary at death year. (insuredeath).  
+- The next 6 line is the condition to find the year of the policy anniversary following the death date.  
+- The last line is to take the date of exit (anniversay following death) minus the age 30 date of entry (agexentry). If it is greater than 1, then they have full exposure at age 30.   
+$~$
+Now we calculate the exposure for those who died.
+```{r}
+AgeDeath=death(LifeB)+death(LifeE)+death(LifeG)+death(LifeJ)
+AgeDeath
+```
+Now we estimate $q_{30}$ with $q_{30}=\frac{d_x}{E_x}$
+```{r}
+qx=2/(AgeDeath+AgeLive+AgeWithdraw)
+qx
+```
+Since life B died before observation period (anniversary 1993 to 1998) and life J died after turning age 31, We will not be adding them to the dead count.
+
+## Estimate q using maximum likelihood.
+We round the exposure of those who age 30 in leap year to 1 for easy calculation.  
+The likelihood function is:  
+$L=q^2(1-q)^6$  
+$\frac{dL}{dq}=2q(1-q)^6+6q^2(q-1)^5$  
+Our estimate $q$ is $\hat{q}$ where $\frac{dL}{dq}=2\hat{q}(1-\hat{q})^6+6\hat{q}^2(\hat{q}-1)^5=0$  
+We will create a function and use command uniroot for this.  
+```{r}
+maxlh=function(q){
+  2*q*((1-q)^6)+(q^2)*6*((q-1)^5)}
+uniroot(maxlh,c(0.01,0.99))$root
+```
+As we can see, the result from both method are similar which can be round as $q_{30}=25\%$

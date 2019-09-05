@@ -1,0 +1,138 @@
+---
+title: "Question 3 Assignment 2_ACST886"
+author: "Vu Nguyen"
+date: "05/09/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is the link to my Assignment on Github:  
+https://github.com/vunguyen1502/ACST886/tree/master/Assignment%202  
+https://github.com/vunguyen1502/ACST886  
+Either link would do.  
+
+# Question 3
+## Question 5.7  
+First we input the data.  
+```{r}
+ax=c(70:75)
+aEx=c(1000,1005,1010,1008,1006,998)
+adx=c(80,90,95,105,115,125)
+```
+Under Gompertz Law, it is assumed that:
+$\dot{u}_x=Bc^x$
+
+We create a log likelihood function of the Poisson model:  
+$lnL=\sum_{x=70}^{75}(-E_{(x)}^cBc^x+\theta_{(x)}ln(E_{(x)}^cBc^x)-ln(\theta_{(x)}!))$
+```{r}
+Q5.7=function(u){
+  -sum(-aEx*u[1]*(u[2]^ax)+adx*log(aEx*u[1]*(u[2]^ax))-log(factorial(adx)))
+}
+```
+Since we are going to use nlm to estimate maximum likelihood, I put a negative sign in front of the function so that minimizing a nagetive function will give us a maximum estimate for a positive function.  
+Now we will use the command nlm to minimize the negative likelihood function to find the optimize value for $B$ and $c$
+
+```{r}
+aiv=c(0.00016,1.09)
+options(warn=-1)
+u=nlm(Q5.7,aiv)$estimate
+u
+```
+aiv vector is the initial value for nlm command. 
+The option command is to ignore the warning (for presentation purpose only). The nlm command will find the value B,c for vector u(B,c) so that the negative likelihood (negative minimum = positive maximum) function Q5.7 is smallest.  
+The $estimate part is to extract the estimated values
+Now we caculate the graduated estimates of force of mortality for each age.
+```{r}
+ux=u[1]*u[2]^ax
+data.frame("Age"=ax,"Force of mortality"=ux)
+```
+
+## Question 5.8
+As given, we have:  
+$ln(\dot{q}_x/(1-\dot{q}_x)=a+bx$  
+First, we input the data.
+```{r}
+bx=c(30:49)
+bEx=c(70000,66672,68375,65420,61779,66091,68514,69560,65000,66279,67300,65368,65391,62917,66537,62302,62145,63856,61097,61110)
+bdx=c(39,43,34,31,23,50,48,43,48,47,62,63,84,86,120,121,122,162,151,184)
+bcrude=bdx/bEx
+lnq=log(bcrude/(1-bcrude))
+```
+
+Then, we create a weighted least squares function to minimize.  
+$\sum_{x=30}^{49} E_x[ln(\hat{q_x}/1-\hat{q_x})-ln(\dot{q_x}/1-\dot{q_x})]^2$  
+$\sum_{x=30}^{49} E_x[ln(\hat{q_x}/1-\hat{q_x})-a-bx]^2$  
+In which: $\hat{q}=d_x/E_x$
+```{r}
+Q5.8=function(z){
+  c=z[1]+z[2]*bx
+  sum(bEx*(lnq-c)^2)
+}
+```
+
+Now we will use the command nlm to minimize the weighted least square function to find the optimize value for $a$ and $b$
+```{r}
+biv=c(-10,0.09)
+z=nlm(Q5.8,biv)$estimate
+z
+```
+biv vector is the initial value for nlm command.  
+The nlm command will find the value a,b for vector z(a,b) so that the function weighted least square Q5.8 will be minimize.
+The $estimate part is to extract the estimated values
+Now we caculate the graduated estimates of mortality rate for each age.
+
+We have
+$ln(\dot{q}_x/(1-\dot{q}_x))=a+bx$  
+Therefore,
+$\dot{q}_x=e^{a+bx}/(1+e^{a+bx})$
+```{r}
+e=exp(z[1]+z[2]*bx)
+bqx=e/(e+1)
+data.frame("Age"=bx,"Mortality rate"=bqx)
+```
+## Question 5.9
+As given, we have:  
+$\dot{q}_x=a+bq_x^S$  
+First, we input the data.
+```{r}
+cx=c(47:67)
+cEx=c(166,187,218,243,276,302,347,390,430,494,558,628,701,813,917,1040,1182,1299,1432,1596,1752)
+cdx=c(2,2,4,6,2,4,7,3,9,9,8,11,14,18,18,24,30,43,41,54,64)
+cqx=cdx/cEx
+cqsx=c(0.00505,0.00570,0.00644,0.00728,0.00826,0.00930,0.01051,0.01184,0.01331,0.01492,0.01668,0.01859,0.02065,0.02287,0.02525,0.02778,0.03049,0.03339,0.03648,0.03978,0.04332)
+
+```
+Then, we create a weighted least squares function to minimize.  
+$\sum_{x=47}^{67} E_x(\hat{q_x}-\dot{q_x})^2$  
+$=\sum_{x=47}^{67} E_x(\hat{q_x}-a-bq_x^S)^2$  
+In which: $\hat{q}=d_x/E_x$
+```{r}
+Q5.9=function(r){
+  qs=r[1]+r[2]*cqsx
+  sum(cEx*(cqx-qs)^2)
+}
+```
+Now we will use the command nlm to minimize the weighted least square function to find the optimize value for $a$ and $b$
+```{r}
+civ=c(0.007,0.6)
+r=nlm(Q5.9,civ)$estimate
+r
+```
+
+civ vector is the initial value for nlm command.  
+The nlm command will find the value a,b for vector z(a,b) so that the function weighted least square Q5.9 will be minimize.
+The $estimate part is to extract the estimated values
+Now we caculate the graduated estimates of mortality rate for each age.
+
+We have
+$\dot{q}_x=a+bq_x^S$  
+```{r}
+qs=r[1]+r[2]*cqsx
+data.frame("Age"=cx,"Mortality rate"=qs)
+```
+
