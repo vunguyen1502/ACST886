@@ -1,0 +1,254 @@
+---
+title: "Question 1 Assignment 3_ACST886"
+author: "Vu Nguyen"
+date: "02/10/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+My code is written using R Markdown
+
+This is the link to my Assignment on Github:  
+https://github.com/vunguyen1502/ACST886/tree/master/Assignment%203  
+https://github.com/vunguyen1502/ACST886  
+Either link would do.
+
+# Question 1 Part a)
+## Decrement table
+Here we need vectors of
+
+1. Age
+2. Death rate
+
+### First we create a vector of age
+```{r}
+x <- c(55,56,57)
+x
+```
+
+### Death rates
+```{r}
+qx <- c(0.001046,0.001199,0.001375)
+qx
+```
+
+
+### Decrement table
+With the rates available, we can now create a decement table for decrements $d$. We'll use a radix of 1\,000\,000.
+```{r}
+al.x <- c()
+ad.x <- c()
+al.x[1] <- 1000000
+for (i in c(1,2,3)){
+  ad.x[i]=al.x[i]*qx[i]
+  al.x[i+1]=al.x[i]-ad.x[i]
+}
+```
+We create a table so that we can easily visualize the data
+```{r}
+data.frame("Age"=x, "aqd"=qx, "al"=al.x[1:3], "ad"=ad.x,check.rows = TRUE)
+```
+## In-force cashflow
+Here we need vectors of
+
+1. Premium adequacy (BoY)
+2. Initial expenses (BoY)
+3. Annual expenses (EoY)
+3. Annual benefits (EoY)
+4. Policy value (EoY)
+
+### Premium adequacy
+We create the vector of premium cashflow
+```{r}
+prems.BoY <- c(40250,0,0)
+prems.BoY
+```
+
+### Initial Expenses
+$E_1=100+0.015\times P_1$
+```{r}
+Exp.Boy=rep(0,3)
+Exp.Boy[1]=100+0.015*prems.BoY[1]
+Exp.Boy
+```
+
+### Annual Expenses
+$E_t=10(1.05)^{t-1}$ for $t=0,1,2$.
+```{r}
+Exp.Eoy <- 10*1.05^c(0:2)
+Exp.Eoy
+```
+$~$  
+$~$  
+
+### Annual benefit
+```{r}
+Annual.EoY=c(15000,15000*1.0192308,15000*1.0192308^2)
+Annual.EoY
+```
+
+
+### Policy value
+Now we have to work on a little math. The policy value formula is:  
+
+$_tV_{x:\bar{n|}}=EPV(out go)-EPV(income)$  
+Since there is only one inflow of cash in the beginning of year 1 and we only need the policy value at the end of year 1 and year 2. Therefore:  
+$EPV(income)=0$  
+We have:  
+$EPV(out go)=B\times a_{x:\bar{n|}}$.  
+However, we expect $B$ to increase in compound fashion. Therefore, the new valuation interest rate is
+```{r}
+p=1.06/1.0192308-1
+round(p,4)
+```
+the new valuation interest rate is 4%.  
+$EPV(out go)=B \times 1.0192308^{2-n}\times a_{x:\bar{n|}}~@4\%$
+$a_{x:\bar{n|}}=\ddot{a}_{x:\bar{n+1|}}-1=\frac{1-A_{x:\bar{n+1|}}}{d}-1~@4\%$  
+Therefore, the policy value is:  
+$_tV_{x:\bar{n|}}=EPV(out go)=B \times 1.0192308^{2-n}\times(\frac{1-A_{x:\bar{n+1|}}}{d}-1)~@4\%$  
+Now we calculate the policy value:  
+```{r}
+d=(1-1.04^-1)
+Policy.EoY=c()
+
+#x=56, n=2
+Policy.EoY[1]=15000*((1-0.889132)/d-1)
+
+#x=57, n=1
+Policy.EoY[2]=15000*1.0192308*((1-0.924607)/d-1)
+
+#No more future out go at the end of year 3
+Policy.EoY[3]=0
+Policy.EoY
+```
+$~$  
+$~$  
+
+### In-force cashflow table
+We create the possible cashflow table for visualization
+
+```{r}
+data.frame("Year"=c(1,2,3),"Age"=x,
+           "Premium_BoY"=prems.BoY,
+           "Initial Expense_EoY"=Exp.Boy,
+           "Annual Expense_EoY"=Exp.Eoy,
+           "Annual Benefit"=Annual.EoY,
+           "Policy value"=Policy.EoY)
+```
+## Expected amounts per sold policy  
+Here we need vectors of
+
+1. Expected premium
+2. Expected initial expenses
+3. Expected annual expenses
+4. Expected annual benefits
+5. Expected interest earned
+6. Expected policy value (to set aside)
+7. Expected transfer (like profit)  
+
+### Premium
+
+Since there is only one payment at the beginning of the first year, the expected value is the same.  
+```{r}
+prems.BoY
+```
+
+### Initial expenses
+Since there only one initial expenses at the beginning of year 1, the expected value is the same.
+```{r}
+Exp.Boy
+```
+$~$  
+
+### Annual expenses
+```{r}
+Ex_Exp.EoY=c()
+for (i in c(1,2,3)){
+  Ex_Exp.EoY[i]=Exp.Eoy[i]*al.x[i+1]/al.x[1]
+}
+Ex_Exp.EoY
+```
+
+### Annual benefit
+```{r}
+Ex_Annual.EoY=c()
+for (i in c(1,2,3)){
+  Ex_Annual.EoY[i]=Annual.EoY[i]*al.x[i+1]/al.x[1]
+}
+Ex_Annual.EoY
+```
+### Policy value
+```{r}
+Ex_Policy.EoY=c()
+for (i in c(1,2,3)){
+  Ex_Policy.EoY[i]=Policy.EoY[i]*al.x[i+1]/al.x[1]
+}
+Ex_Policy.EoY
+```
+
+### Interest
+```{r}
+Int=c()
+Int[1]=(prems.BoY[1]-Exp.Boy[1])*0.08
+Int[2]=(prems.BoY[2]+Ex_Policy.EoY[1])*0.08
+Int[3]=(prems.BoY[3]+Ex_Policy.EoY[2])*0.08
+Int
+```
+$~$  
+$~$  
+
+### Transfer
+The profit signature is:
+```{r}
+Transfer=c()
+Transfer=prems.BoY-Ex_Exp.EoY-Ex_Annual.EoY-Ex_Policy.EoY+Int
+Transfer[1]=Transfer[1]-Exp.Boy[1]
+Transfer[2]=Transfer[2]+Ex_Policy.EoY[1]
+Transfer[3]=Transfer[3]+Ex_Policy.EoY[2]
+Transfer
+```
+
+### Expected amount per sold policy table
+We create the possible cashflow table for visualization
+```{r}
+data.frame("Year"=c(1:3),"Premium_BOY"=prems.BoY,
+           "Initial Expenses"=Exp.Boy,
+           "Annual Expenses_EOY"=Ex_Exp.EoY,
+           "Annual Benefit_EoY"=Ex_Annual.EoY,"Interest"=Int,
+           "Policy value_EOY"=Ex_Policy.EoY,"Transfer"=Transfer)
+```
+### (i) Determine the profit signature
+```{r}
+Transfer
+```
+
+### (ii) Expected NPV
+```{r}
+t=c(1,2,3)
+Enpv=sum(Transfer/(1.12^t))
+Enpv
+```
+
+### (ii) Profit margin
+```{r}
+Pm=Enpv/prems.BoY[1]
+Pm
+```
+# Question 1 Part b)
+We can calculate IRR using uniroot on a function of NPV
+
+```{r}
+firr=function(i) {
+t=c(1,2,3)
+sum(Transfer/((1+i)^t))
+}
+irr=uniroot(firr,c(-0.99,1))
+irr$root
+```
+
+The yield is appoximately 50%. We expect the IRR to be high because the number of annual benefit payment is low (3) and each payment is relatively high. This result low amount of policy value holding during each year which increase the transfer and the yield of the policy.
